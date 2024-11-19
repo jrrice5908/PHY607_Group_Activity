@@ -19,6 +19,7 @@ class Particle:
     def __init__(self, position, velocity, mass=1.0, radius=1.0):
         self.position = np.array(position)
         self.velocity = np.array(velocity)
+        self.acceleration = 10 ## m/s^2, Just making gravity 10 m/s^2
         self.mass = mass
         self.radius = radius
 
