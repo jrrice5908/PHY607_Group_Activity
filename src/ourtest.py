@@ -23,11 +23,18 @@ def run_simulation_and_measure(n_steps, dt, box_size, n_particles, initial_temp,
 
     # Initialize the box without predefined temperature
     box = Box(box_size)
+    cow_pos = np.array([50.0,50.0])
+    cow_vel = np.array([100.0,100.0])
+    cow_mass = 10
+    cow_rad = 10.0
+    cow = Particle(cow_pos, cow_vel, mass = cow_mass, radius = cow_rad)
     # Initialize the box and particles
     particles = []
+    particles.append(cow)
+    box.add_particle(cow)
     while len(particles) < n_particles:  # Ensure exactly n_particles are created
         position = np.random.rand(2) * box_size
-        velocity = np.random.randn(2)
+        velocity = np.random.uniform(-100, 100, size=2)
         particle = Particle(position, velocity, radius=particle_radius)
 
         # Check for overlaps and boundary conditions
@@ -45,7 +52,7 @@ def run_simulation_and_measure(n_steps, dt, box_size, n_particles, initial_temp,
     print(f"Total initialized particles: {len(particles)}")
 
     # Initialize velocities based on the chosen mode (temperature, uniform, rejection_sampling, inverse_cdf)
-    box.initialize_velocities(temperature=initial_temp, mode=mode)
+    #box.initialize_velocities(temperature=initial_temp, mode=mode)
 
     if video_output:
         # Setup for saving the video

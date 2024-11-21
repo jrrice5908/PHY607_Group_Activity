@@ -60,7 +60,7 @@ class Box:
         elif mode == "uniform":
             # Random uniform velocity distribution
             for particle in self.particles:
-                particle.velocity = np.random.uniform(-1000, 1000, size=2)
+                particle.velocity = np.random.uniform(0, 1, size=2)
             #print(f"Initialized velocities using uniform distribution")
 
         elif mode == "rejection_sampling":
