@@ -1,6 +1,6 @@
 import numpy as np
-from .particle import Particle
-from .utils import rejection_sampling, inverse_cdf_sampling, velocity_pdf, sample_velocity_with_rejection
+from particle import Particle
+from utils import rejection_sampling, inverse_cdf_sampling, velocity_pdf, sample_velocity_with_rejection
 
 
 class Box:
@@ -20,7 +20,7 @@ class Box:
     def __init__(self, size=10.0):
         self.size = size
         self.particles = []
-        self.volume = size ** 3  # Volume of the box
+        self.volume = size ** 2  # Volume of the box
         self.k_B = 1  # Approximation of Boltzmann constant for simplicity
 
         # Lists to store measurements over time
@@ -54,13 +54,13 @@ class Box:
             # Maxwell-Boltzmann distribution for velocity magnitude
             for particle in self.particles:
                 velocity_magnitude = np.sqrt(3 * self.k_B * temperature / particle.mass)
-                particle.velocity = np.random.normal(0, velocity_magnitude, size=3)
+                particle.velocity = np.random.normal(0, velocity_magnitude, size=2)
             #print(f"Initialized velocities using Maxwell-Boltzmann distribution with temperature: {temperature}")
 
         elif mode == "uniform":
             # Random uniform velocity distribution
             for particle in self.particles:
-                particle.velocity = np.random.uniform(-10, 10, size=3)
+                particle.velocity = np.random.uniform(-1000, 1000, size=2)
             #print(f"Initialized velocities using uniform distribution")
 
         elif mode == "rejection_sampling":
@@ -96,16 +96,15 @@ class Box:
         particle : Particle
             The particle to check for wall collisions.
         """
-        for i in range(3):  # Check x, y, z directions
-            if particle.position[i] - particle.radius <= 0:
-                # Particle has hit the wall in the negative direction
-                particle.position[i] = particle.radius  # Keep particle inside the box
-                particle.velocity[i] *= -1  # Reverse velocity direction
-            elif particle.position[i] + particle.radius >= self.size:
-                # Particle has hit the wall in the positive direction
-                particle.position[i] = self.size - particle.radius  # Keep particle inside the box
-                particle.velocity[i] *= -1  # Reverse velocity direction
-
+        for i in range(2):  # Check x, y directions
+            # Check collision with the lower wall
+            if particle.position[i] - particle.radius < 0:
+                particle.position[i] = particle.radius  # Correct position
+                particle.velocity[i] *= -1  # Reverse velocity
+            # Check collision with the upper wall
+            elif particle.position[i] + particle.radius > self.size:
+                particle.position[i] = self.size - particle.radius  # Correct position
+                particle.velocity[i] *= -1  # Reverse velocity
     def handle_particle_collisions(self, particle1, particle2):
         """
         Handle elastic collisions between two particles.
@@ -117,21 +116,29 @@ class Box:
         particle2 : Particle
             The second particle.
         """
-        distance = np.linalg.norm(particle1.position - particle2.position)
+        # Compute distance between the particles
+        pos_diff = particle1.position - particle2.position
+        distance = np.linalg.norm(pos_diff)
 
-        # Check if the distance between particles is less than or equal to the sum of their radii
+        # Check if the particles are colliding
         if distance <= particle1.radius + particle2.radius:
-            # Elastic collision between two particles
+            # Adjust positions to avoid overlap
+            overlap = particle1.radius + particle2.radius - distance
+            correction = (overlap / 2) * (pos_diff / distance)
+            particle1.position += correction
+            particle2.position -= correction
+
+            # Compute velocities before collision
             v1, v2 = particle1.velocity, particle2.velocity
             m1, m2 = particle1.mass, particle2.mass
-            pos_diff = particle1.position - particle2.position
-            vel_diff = v1 - v2
 
-            # Update velocities (elastic collision formula)
-            particle1.velocity = v1 - (2 * m2 / (m1 + m2)) * (
-                np.dot(vel_diff, pos_diff) / np.dot(pos_diff, pos_diff)) * pos_diff
-            particle2.velocity = v2 - (2 * m1 / (m1 + m2)) * (
-                np.dot(-vel_diff, -pos_diff) / np.dot(pos_diff, pos_diff)) * -pos_diff
+            # Compute the velocity change due to the collision
+            vel_diff = v1 - v2
+            pos_norm = pos_diff / distance  # Normalize position difference
+            collision_factor = np.dot(vel_diff, pos_norm)
+
+            particle1.velocity -= (2 * m2 / (m1 + m2)) * collision_factor * pos_norm
+            particle2.velocity += (2 * m1 / (m1 + m2)) * collision_factor * pos_norm
 
     def calculate_temperature(self):
         """

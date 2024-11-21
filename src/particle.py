@@ -7,9 +7,9 @@ class Particle:
     Attributes
     ----------
     position : np.ndarray
-        The particle's position in 3D space.
+        The particle's position in 2D space.
     velocity : np.ndarray
-        The particle's velocity in 3D space.
+        The particle's velocity in 2D space.
     mass : float
         The particle's mass.
     radius : float
@@ -19,20 +19,23 @@ class Particle:
     def __init__(self, position, velocity, mass=1.0, radius=1.0):
         self.position = np.array(position)
         self.velocity = np.array(velocity)
-        self.acceleration = 10 ## m/s^2, Just making gravity 10 m/s^2
+        self.acceleration = np.array([0, -10])  # Gravity in the negative y-direction
         self.mass = mass
         self.radius = radius
 
     def update_position(self, dt):
         """
-        Update the particle's position based on its velocity.
+        Update the particle's position and velocity due to gravity.
 
         Parameters
         ----------
         dt : float
             Time step for position update.
         """
-        self.position += self.velocity * dt
+        # Update position
+        self.position += self.velocity * dt + (self.acceleration * dt * dt) / 2
+        # Update velocity
+        self.velocity += self.acceleration * dt
 
     def apply_force(self, force, dt):
         """
